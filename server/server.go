@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"storex/handlers"
 )
 
 func SetupRoutes() http.Handler {
@@ -19,6 +20,9 @@ func SetupRoutes() http.Handler {
 			return
 		}
 	}).Methods("GET")
+
+	r.HandleFunc("/refresh", handlers.RefreshToken).Methods("POST")
+	r.HandleFunc("/sign-in", handlers.SignIn).Methods("POST")
 
 	return r
 }

@@ -28,6 +28,8 @@ func ConnectAndMigrate(host, port, databaseName, user, password string, ssl SSLM
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s  sslmode=%s", host, port, user, password, databaseName, ssl)
 	DB, dbError := sqlx.Connect("postgres", connectionString)
 	if dbError != nil {
+		println(dbError.Error())
+		println(connectionString)
 		logrus.Errorf("failed in connecting...")
 		return dbError
 	}
@@ -65,10 +67,10 @@ func migrateUpAndDown(db *sqlx.DB) error {
 		logrus.Errorf("failed in .up file migration...")
 		return migError
 	}
-	if migError = mig.Down(); migError != nil && !errors.Is(migError, migrate.ErrNoChange) {
-		logrus.Info("failed in .down file migration...")
-		return migError
-	}
+	//if migError = mig.Down(); migError != nil && !errors.Is(migError, migrate.ErrNoChange) {
+	//	logrus.Info("failed in .down file migration...")
+	//	return migError
+	//}
 	logrus.Info("Successfully migrated database")
 	return nil
 }
