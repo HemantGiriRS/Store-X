@@ -14,3 +14,18 @@ type UserContext struct {
 	ID   string `json:"id" db:"id"`
 	Role string `json:"role" db:"role"`
 }
+
+type SignUpRequest struct {
+	Email   string `json:"email" db:"email"`
+	PhoneNo string `json:"phone_no" db:"phone_no"`
+	Type    string `json:"type" db:"type"`
+}
+
+type SignUpResponse struct {
+	Message string `json:"message"`
+	UserID  string `json:"user_id"`
+}
+
+type UpdateRoleRequest struct {
+	Role string `json:"role"`
+}

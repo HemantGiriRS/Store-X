@@ -16,7 +16,7 @@ const (
 	RoleKey   contextKey = "userRole"
 )
 
-func AuthMiddleware(next http.Handler) http.Handler {
+func Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
@@ -33,9 +33,10 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		tokenString := parts[1]
+		//fmt.Println(tokenString)
 		claims, err := utils.ParseAccessToken(tokenString)
 		if err != nil {
-			logrus.Info("invalid token")
+			logrus.Info("invalid token", err.Error())
 			http.Error(w, "invalid or expired token", http.StatusUnauthorized)
 			return
 		}

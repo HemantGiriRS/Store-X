@@ -74,3 +74,28 @@ func migrateUpAndDown(db *sqlx.DB) error {
 	logrus.Info("Successfully migrated database")
 	return nil
 }
+
+func Tx(fn func(tx *sqlx.Tx) error) error {
+	tx, err := SX.Beginx()
+	if err != nil {
+		fmt.Printf("failed in starting transaction...")
+		return err
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			logrus.Errorf("recovered panic: %v", p)
+			_ = tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				logrus.Errorf("failed in rollback transaction...")
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				logrus.Errorf("failed in commit transaction...")
+			}
+		}
+	}()
+	err = fn(tx)
+	return err
+}

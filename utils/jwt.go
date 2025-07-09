@@ -37,6 +37,23 @@ func GenerateRefreshToken(userID, role string) (string, error) {
 	return token.SignedString(refreshSecret)
 }
 
+func GenerateTokenPair(userID, role string) (*models.TokenResponse, error) {
+	accessToken, err := GenerateAccessToken(userID, role)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := GenerateRefreshToken(userID, role)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
 func ParseRefreshToken(tokenStr string) (*models.Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &models.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return refreshSecret, nil

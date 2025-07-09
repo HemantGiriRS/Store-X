@@ -4,5 +4,6 @@
     <file url="file://$PROJECT_DIR$/database/migrations/0001_initDBWithRequireType.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/database/migrations/0002_initDBWithRequireTable.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/database/migrations/0003_specs_table.up.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/migrations/0004_admin.up.sql" dialect="PostgreSQL" />
   </component>
 </project>
