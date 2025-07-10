@@ -1,0 +1,102 @@
+[
+  {
+    "email": "priya.patel@remotestate.com",
+    "phone_no": "+919876543201",
+    "type": "full-time"
+  },
+  {
+    "email": "rohan.sharma@remotestate.com",
+    "phone_no": "+919876543202",
+    "type": "full-time"
+  },
+  {
+    "email": "ananya.kumar@remotestate.com",
+    "phone_no": "+919876543203",
+    "type": "full-time"
+  },
+  {
+    "email": "vikram.singh@remotestate.com",
+    "phone_no": "+919876543204",
+    "type": "full-time"
+  },
+  {
+    "email": "sneha.gupta@remotestate.com",
+    "phone_no": "+919876543205",
+    "type": "full-time"
+  },
+  {
+    "email": "aditya.reddy@remotestate.com",
+    "phone_no": "+919876543206",
+    "type": "intern"
+  },
+  {
+    "email": "kavita.shah@remotestate.com",
+    "phone_no": "+919876543207",
+    "type": "full-time"
+  },
+  {
+    "email": "arjun.verma@remotestate.com",
+    "phone_no": "+919876543208",
+    "type": "full-time"
+  },
+  {
+    "email": "meera.das@remotestate.com",
+    "phone_no": "+919876543209",
+    "type": "freelancer"
+  },
+  {
+    "email": "sameer.joshi@remotestate.com",
+    "phone_no": "+919876543210",
+    "type": "full-time"
+  },
+  {
+    "email": "divya.khan@remotestate.com",
+    "phone_no": "+919876543211",
+    "type": "freelancer"
+  },
+  {
+    "email": "rahul.prasad@remotestate.com",
+    "phone_no": "+919876543212",
+    "type": "full-time"
+  },
+  {
+    "email": "pooja.iyer@remotestate.com",
+    "phone_no": "+919876543213",
+    "type": "full-time"
+  },
+  {
+    "email": "karan.nair@remotestate.com",
+    "phone_no": "+919876543214",
+    "type": "full-time"
+  },
+  {
+    "email": "sunita.malhotra@remotestate.com",
+    "phone_no": "+919876543215",
+    "type": "full-time"
+  },
+  {
+    "email": "amit.rao@remotestate.com",
+    "phone_no": "+919876543216",
+    "type": "intern"
+  },
+  {
+    "email": "riya.bose@remotestate.com",
+    "phone_no": "+919876543217",
+    "type": "full-time"
+  },
+  {
+    "email": "varun.mehta@remotestate.com",
+    "phone_no": "+919876543218",
+    "type": "intern"
+  },
+  {
+    "email": "nisha.kapoor@remotestate.com",
+    "phone_no": "+919876543219",
+    "type": "full-time"
+  },
+  {
+    "email": "rajesh.chauhan@remotestate.com",
+    "phone_no": "+919876543220",
+    "type": "full-time"
+  }
+]

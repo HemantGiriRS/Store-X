@@ -1,0 +1,146 @@
+[
+
+  {
+    "brand": "Dell",
+    "model": "XPS 15 9530",
+    "type": "laptop",
+    "serial_no": "LAP-DELL-0001",
+    "owned_by": "RemoteState",
+    "purchase_date": "2023-01-15T10:00:00Z",
+    "warranty_end": "2025-01-14T23:59:59Z",
+    "specs": { "processor": "Intel Core i7", "ram_gb": 16, "storage_gb": 512, "os": "Windows 11" }
+  },
+  {
+    "brand": "Apple",
+    "model": "MacBook Air M2",
+    "type": "laptop",
+    "serial_no": "LAP-APL-0002",
+    "owned_by": "RemoteState",
+    "purchase_date": "2023-03-20T10:00:00Z",
+    "warranty_end": "2025-03-19T23:59:59Z",
+    "specs": { "processor": "Apple M2", "ram_gb": 16, "storage_gb": 512, "os": "macOS" }
+  },
+
+  {
+    "brand": "Logitech",
+    "model": "MX Master 3S",
+    "type": "mouse",
+    "serial_no": "MOU-LOG-0001",
+    "owned_by": "Client",
+    "specs": { "connection_type": "wireless", "dpi": 8000, "number_of_buttons": 7 }
+  },
+  {
+    "brand": "Razer",
+    "model": "DeathAdder V2",
+    "type": "mouse",
+    "serial_no": "MOU-RAZ-0002",
+    "owned_by": "RemoteState",
+    "specs": { "connection_type": "wired", "dpi": 20000, "number_of_buttons": 8 }
+  },
+
+  {
+    "brand": "Dell",
+    "model": "UltraSharp U2723QE",
+    "type": "monitor",
+    "serial_no": "MON-DEL-0001",
+    "owned_by": "RemoteState",
+    "specs": { "size_inch": 27, "resolution": "3840x2160", "refresh_rate_hz": 60, "panel_type": "IPS" }
+  },
+  {
+    "brand": "LG",
+    "model": "27GP850-B",
+    "type": "monitor",
+    "serial_no": "MON-LG-0002",
+    "owned_by": "RemoteState",
+    "specs": { "size_inch": 27, "resolution": "2560x1440", "refresh_rate_hz": 165, "panel_type": "Nano IPS" }
+  },
+
+  {
+    "brand": "Samsung",
+    "model": "980 Pro",
+    "type": "hard-disk",
+    "serial_no": "HDD-SAM-0001",
+    "owned_by": "RemoteState",
+    "specs": { "capacity_gb": 1000, "type": "SSD", "interface": "NVMe" }
+  },
+  {
+    "brand": "Seagate",
+    "model": "Barracuda",
+    "type": "hard-disk",
+    "serial_no": "HDD-SEA-0002",
+    "owned_by": "Client",
+    "specs": { "capacity_gb": 2000, "type": "HDD", "interface": "SATA" }
+  },
+
+  {
+    "brand": "SanDisk",
+    "model": "Ultra Flair",
+    "type": "pen-drive",
+    "serial_no": "PEN-SAN-0001",
+    "owned_by": "RemoteState",
+    "specs": { "capacity_gb": 128, "usb_type": "USB 3.0" }
+  },
+  {
+    "brand": "Kingston",
+    "model": "DataTraveler Max",
+    "type": "pen-drive",
+    "serial_no": "PEN-KIN-0002",
+    "owned_by": "Client",
+    "specs": { "capacity_gb": 256, "usb_type": "USB-C" }
+  },
+
+  {
+    "brand": "Apple",
+    "model": "iPhone 15 Pro",
+    "type": "mobile",
+    "serial_no": "MOB-APL-0001",
+    "owned_by": "RemoteState",
+    "purchase_date": "2023-09-25T10:00:00Z",
+    "warranty_end": "2024-09-24T23:59:59Z",
+    "specs": { "imei": "353928012345678", "ram_gb": 8, "storage_gb": 256, "os": "iOS" }
+  },
+  {
+    "brand": "Samsung",
+    "model": "Galaxy S23",
+    "type": "mobile",
+    "serial_no": "MOB-SAM-0002",
+    "owned_by": "Client",
+    "purchase_date": "2023-04-10T10:00:00Z",
+    "warranty_end": "2025-04-09T23:59:59Z",
+    "specs": { "imei": "358729018765432", "ram_gb": 8, "storage_gb": 256, "os": "Android" }
+  },
+
+  {
+    "brand": "Jio",
+    "model": "Prepaid SIM",
+    "type": "sim",
+    "serial_no": "SIM-JIO-0001",
+    "owned_by": "RemoteState",
+    "specs": { "phone_number": "+919876543210", "operator": "Jio", "sim_type": "physical", "plan_details": "599 Plan" }
+  },
+  {
+    "brand": "Airtel",
+    "model": "eSIM Postpaid",
+    "type": "sim",
+    "serial_no": "SIM-AIR-0002",
+    "owned_by": "Client",
+    "specs": { "phone_number": "+919876543211", "operator": "Airtel", "sim_type": "eSIM", "plan_details": "Corporate 499" }
+  },
+
+  {
+    "brand": "Anker",
+    "model": "PowerPort III",
+    "type": "accessories",
+    "serial_no": "ACC-ANK-0001",
+    "owned_by": "RemoteState",
+    "specs": { "name": "65W GaN Charger", "description": "Fast charger for laptops and phones", "compatibility": "USB-C" }
+  },
+  {
+    "brand": "Logitech",
+    "model": "C920",
+    "type": "accessories",
+    "serial_no": "ACC-LOG-0002",
+    "owned_by": "Client",
+    "specs": { "name": "Webcam", "description": "1080p HD Webcam for meetings", "compatibility": "USB-A" }
+  }
+]

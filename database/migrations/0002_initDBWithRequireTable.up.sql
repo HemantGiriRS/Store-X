@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS asset_table (
 
 -- SERVICE TABLE
 CREATE TABLE IF NOT EXISTS service_table (
-                                             id UUID PRIMARY KEY,
+                                             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                                              assigned_to TEXT NOT NULL,
                                              assigned_by UUID NOT NULL REFERENCES employee_table(id),
                                              asset_id UUID NOT NULL REFERENCES asset_table(id),
@@ -52,10 +52,11 @@ CREATE TABLE IF NOT EXISTS service_table (
 
 -- ASSIGNED LOG TABLE
 CREATE TABLE IF NOT EXISTS assigned_log_table (
-                                                  id UUID PRIMARY KEY,
+                                                  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                                                   asset_id UUID NOT NULL REFERENCES asset_table(id),
                                                   employee_id UUID NOT NULL REFERENCES employee_table(id),
                                                   reason_of_retrieval TEXT,
+                                                  assigned_by UUID REFERENCES employee_table(id),
                                                   start_at TIMESTAMP NOT NULL,
                                                   end_at TIMESTAMP
 );

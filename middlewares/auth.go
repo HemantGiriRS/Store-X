@@ -51,6 +51,7 @@ func Auth(next http.Handler) http.Handler {
 		// Inject into request context
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 		ctx = context.WithValue(ctx, RoleKey, claims.Role)
+		//fmt.Println(claims.Role)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
