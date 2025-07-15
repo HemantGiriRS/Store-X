@@ -20,8 +20,8 @@ import (
 
 type SpecHandler func(tx *sqlx.Tx, assetID string, specsData json.RawMessage) error
 
-// specHandlers is our map (registry) that maps an asset type string to its handler function.
-var specHandlers = map[string]SpecHandler{
+// SpecHandlers is our map (registry) that maps an asset type string to its handler function.
+var SpecHandlers = map[string]SpecHandler{
 	"laptop":      handleLaptopSpecs,
 	"mouse":       handleMouseSpecs,
 	"monitor":     handleMonitorSpecs,
@@ -120,7 +120,7 @@ func CreateAsset(w http.ResponseWriter, r *http.Request) {
 	req.Type = strings.ToLower(req.Type)
 	var assetID string // To store the new asset's ID.
 
-	if _, found := specHandlers[req.Type]; !found {
+	if _, found := SpecHandlers[req.Type]; !found {
 		http.Error(w, ErrUnknownAssetType.Error(), http.StatusBadRequest)
 		return
 	}
@@ -132,7 +132,7 @@ func CreateAsset(w http.ResponseWriter, r *http.Request) {
 		}
 		assetID = newID
 
-		handler := specHandlers[req.Type]
+		handler := SpecHandlers[req.Type]
 
 		// Execute the specific handler for the asset's specs.
 		return handler(tx, assetID, req.Specs)
@@ -200,6 +200,11 @@ func AssignAsset(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
+		err = dbHelper.IncrementEmployeeAssetCount(tx, req.EmployeeID)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -215,7 +220,7 @@ func AssignAsset(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	
+
 	response := map[string]string{
 		"message": "Asset assigned successfully",
 	}

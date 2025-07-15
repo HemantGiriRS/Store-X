@@ -7,11 +7,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
+	"math"
 	"net/http"
 	"storex/database/dbHelper"
 	"storex/middlewares"
 	"storex/models"
 	"storex/utils"
+	"strconv"
 	"strings"
 )
 
@@ -125,7 +127,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid email format or domain", http.StatusBadRequest)
 		return
 	}
-	if check := utils.IsValidEmployeeType(req.Type); !check {
+	if check := utils.ValidEmpTypes[req.Type]; !check {
 		http.Error(w, "Invalid employee type", http.StatusBadRequest)
 	}
 
@@ -186,7 +188,7 @@ func UpdateRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	normalizedRole := strings.ToLower(req.Role)
-	if !utils.IsValidEmployeeRole(normalizedRole) {
+	if !utils.ValidRoles[normalizedRole] {
 		http.Error(w, "Invalid role provided. Must be one of: admin, asset_manager, employee_manager, employee.", http.StatusBadRequest)
 		return
 	}
@@ -206,4 +208,64 @@ func UpdateRole(w http.ResponseWriter, r *http.Request) {
 	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
 		logrus.Errorf("Failed to send success response: %v", err)
 	}
+}
+
+func GetEmployees(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	filters := make(map[string]string)
+
+	if q := queryParams.Get("q"); q != "" {
+		filters["q"] = q
+	}
+
+	if role := strings.ToLower(queryParams.Get("role")); role != "" {
+		if utils.ValidRoles[role] {
+			filters["role"] = role
+		}
+	}
+
+	if empType := strings.ToLower(queryParams.Get("type")); empType != "" {
+		if utils.ValidEmpTypes[empType] {
+			filters["type"] = empType
+		}
+	}
+
+	if status := strings.ToLower(queryParams.Get("assignment_status")); status != "" {
+		if utils.ValidAssignmentStatus[status] {
+			filters["assignment_status"] = status
+		}
+	}
+
+	page, err := strconv.Atoi(queryParams.Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	pageSize, err := strconv.Atoi(queryParams.Get("pageSize"))
+	if err != nil || pageSize < 1 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	employees, totalRecords, err := dbHelper.GetEmployeesFiltered(filters, page, pageSize)
+	if err != nil {
+		logrus.Errorf("Failed to get employees from database: %v", err)
+		http.Error(w, "Failed to retrieve employee data", http.StatusInternalServerError)
+		return
+	}
+
+	totalPages := 0
+	if totalRecords > 0 {
+		totalPages = int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	}
+
+	response := models.GetEmployeesResponse{
+		Data: employees,
+		Pagination: models.PaginationInfo{
+			CurrentPage:  page,
+			PageSize:     pageSize,
+			TotalRecords: totalRecords,
+			TotalPages:   totalPages,
+		},
+	}
+	utils.EncodeResponse(w, http.StatusOK, response)
 }

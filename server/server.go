@@ -33,16 +33,19 @@ func SetupRoutes() http.Handler {
 	requireRoleAEM := app.PathPrefix("/private").Subrouter()
 	requireRoleAEM.Use(middlewares.Auth, middlewares.RequireRole("admin", "employee_manager"))
 	requireRoleAEM.HandleFunc("/register-employee", handlers.SignUp).Methods("POST")
+	requireRoleAEM.HandleFunc("/employees", handlers.GetEmployees).Methods("GET")
 
 	//protected routes only for admin and asset manager
 	requireRoleAAM := app.PathPrefix("/private").Subrouter()
 	requireRoleAAM.Use(middlewares.Auth, middlewares.RequireRole("admin", "asset_manager"))
 	requireRoleAAM.HandleFunc("/assets", handlers.CreateAsset).Methods("POST")
 	requireRoleAAM.HandleFunc("/assets/{asset_id}/assign", handlers.AssignAsset).Methods("POST")
+	//requireRoleAAM.HandleFunc("/assets", handlers.GetAssets).Methods("GET")
 
 	//private routes only for admin
 	adminOnly := app.PathPrefix("/admin").Subrouter()
 	adminOnly.Use(middlewares.Auth, middlewares.RequireRole("admin"))
 	adminOnly.HandleFunc("/employees/{employee_id}/role", handlers.UpdateRole).Methods("PATCH")
+
 	return r
 }

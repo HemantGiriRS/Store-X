@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"storex/database"
 	"storex/models"
 	"storex/utils"
+	"strings"
 )
 
 func FindUserByEmail(email string) (*models.UserContext, error) {
@@ -53,6 +55,15 @@ func CreateUser(user models.SignUpRequest, role string, createdBy uuid.UUID) (st
 	return id, nil
 }
 
+func IncrementEmployeeAssetCount(tx *sqlx.Tx, employeeID string) error {
+	SQL := `UPDATE employee_table SET asset_status = asset_status + 1 WHERE id = $1`
+	_, err := tx.Exec(SQL, employeeID)
+	if err != nil {
+		return fmt.Errorf("failed to increment asset count for employee %s: %w", employeeID, err)
+	}
+	return nil
+}
+
 func UpdateEmployeeRole(employeeID, newRole, actorID string) error {
 	SQL := `UPDATE employee_table SET role = $1, updated_at = NOW() , updated_by =$2 WHERE id = $3`
 
@@ -73,4 +84,75 @@ func UpdateEmployeeRole(employeeID, newRole, actorID string) error {
 	}
 
 	return nil
+}
+
+func GetEmployeesFiltered(filters map[string]string, page, pageSize int) ([]models.EmployeeDetail, int64, error) {
+	var employees []models.EmployeeDetail
+	var totalRecords int64
+
+	whereClauses := []string{"archived_at IS NULL"}
+	args := []interface{}{}
+
+	if query, ok := filters["q"]; ok && query != "" {
+		whereClauses = append(whereClauses, "(name ILIKE ? OR email ILIKE ? OR phone_no ILIKE ?)")
+		likeQuery := "%" + query + "%"
+		args = append(args, likeQuery, likeQuery, likeQuery)
+	}
+
+	if role, ok := filters["role"]; ok && role != "" {
+		whereClauses = append(whereClauses, "role = ?")
+		args = append(args, role)
+	}
+
+	if empType, ok := filters["type"]; ok && empType != "" {
+		whereClauses = append(whereClauses, "type = ?")
+		args = append(args, empType)
+	}
+
+	if status, ok := filters["assignment_status"]; ok && status != "" {
+		if status == "assigned" {
+			whereClauses = append(whereClauses, "asset_status > 0")
+		} else if status == "not_assigned" {
+			whereClauses = append(whereClauses, "asset_status = 0")
+		}
+	}
+
+	whereStatement := ""
+	if len(whereClauses) > 0 {
+		whereStatement = "WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	// --- 1. Execute COUNT query ---
+	countQueryString := fmt.Sprintf("SELECT COUNT(*) FROM employee_table %s", whereStatement)
+	countQuery := database.SX.Rebind(countQueryString)
+	err := database.SX.Get(&totalRecords, countQuery, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to execute count query: %w", err)
+	}
+
+	if totalRecords == 0 {
+		return []models.EmployeeDetail{}, 0, nil
+	}
+
+	// --- 2. Execute SELECT query ---
+	selectQueryString := fmt.Sprintf(`
+        SELECT 
+            id, name, email, phone_no, type, role, asset_status, created_at, updated_at 
+        FROM 
+            employee_table
+        %s
+        ORDER BY 
+            created_at DESC 
+        LIMIT ? OFFSET ?`, whereStatement)
+
+	offset := (page - 1) * pageSize
+	pagedArgs := append(args, pageSize, offset)
+
+	selectQuery := database.SX.Rebind(selectQueryString)
+	err = database.SX.Select(&employees, selectQuery, pagedArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to execute select query: %w", err)
+	}
+
+	return employees, totalRecords, nil
 }

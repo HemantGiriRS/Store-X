@@ -38,10 +38,44 @@ func GetName(email string) string {
 	return name
 }
 
-func IsValidEmployeeType(empType string) bool {
-	return empType == "full-time" || empType == "intern" || empType == "freelancer"
+var ValidRoles = map[string]bool{
+	"admin":            true,
+	"asset_manager":    true,
+	"employee_manager": true,
+	"employee":         true,
 }
 
-func IsValidEmployeeRole(role string) bool {
-	return role == "admin" || role == "asset_manager" || role == "employee_manager" || role == "employee"
+var ValidEmpTypes = map[string]bool{"full-time": true,
+	"intern":     true,
+	"freelancer": true,
+}
+
+var ValidAssignmentStatus = map[string]bool{
+	"assigned":     true,
+	"not_assigned": true,
+}
+
+var ValidAssetTypes = map[string]bool{
+	"laptop":      true,
+	"mouse":       true,
+	"monitor":     true,
+	"hard-disk":   true,
+	"pen-drive":   true,
+	"mobile":      true,
+	"sim":         true,
+	"accessories": true,
+}
+
+var ValidAssetStatuses = map[string]bool{
+	"available":     true,
+	"assigned":      true,
+	"waitForRepair": true,
+	"service":       true,
+	"damage":        true,
+	"deleted":       true,
+}
+
+var ValidAssetOwnedBy = map[string]bool{
+	"RemoteState": true,
+	"Client":      true,
 }
