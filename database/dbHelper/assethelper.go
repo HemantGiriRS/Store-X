@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"storex/database"
 	"storex/models"
+	"strings"
 )
 
 func CreateAsset(tx *sqlx.Tx, asset models.BaseAsset, createdByID string) (string, error) {
@@ -140,5 +142,125 @@ func CreateAssignmentLog(tx *sqlx.Tx, assetID, employeeID, assignedByID string) 
 	if err != nil {
 		return fmt.Errorf("failed to create assignment log: %w", err)
 	}
+	return nil
+}
+func GetAssetsFiltered(filters map[string]string, page, pageSize int) ([]models.AssetDetail, int64, error) {
+	var assets []models.AssetDetail
+	var totalRecords int64
+
+	baseSelect := `
+        SELECT 
+            a.id, a.brand, a.model, a.type, a.serial_no, a.status, 
+            a.owned_by, a.purchase_date, a.warranty_end, a.created_at,
+            a.assigned_to as assigned_to_id,
+            e.name as assigned_to_name,
+            e.email as assigned_to_email
+        FROM 
+            asset_table a
+        LEFT JOIN 
+            employee_table e ON a.assigned_to::uuid = e.id AND e.archived_at IS NULL
+    `
+	baseCount := `SELECT COUNT(a.id) FROM asset_table a`
+	whereClauses := []string{"a.archived_at IS NULL"}
+	args := []interface{}{}
+
+	if query, ok := filters["q"]; ok && query != "" {
+		whereClauses = append(whereClauses, "(a.brand ILIKE ? OR a.model ILIKE ? OR a.serial_no ILIKE ?)")
+		likeQuery := "%" + query + "%"
+		args = append(args, likeQuery, likeQuery, likeQuery)
+	}
+	if assetType, ok := filters["type"]; ok && assetType != "" {
+		whereClauses = append(whereClauses, "a.type = ?")
+		args = append(args, assetType)
+	}
+	if status, ok := filters["status"]; ok && status != "" {
+		whereClauses = append(whereClauses, "a.status = ?")
+		args = append(args, status)
+	}
+	if ownedBy, ok := filters["owned_by"]; ok && ownedBy != "" {
+		whereClauses = append(whereClauses, "a.owned_by = ?")
+		args = append(args, ownedBy)
+	}
+
+	whereStatement := "WHERE " + strings.Join(whereClauses, " AND ")
+
+	countQueryString := fmt.Sprintf("%s %s", baseCount, whereStatement)
+	countQuery := database.SX.Rebind(countQueryString)
+	err := database.SX.Get(&totalRecords, countQuery, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to execute asset count query: %w", err)
+	}
+
+	if totalRecords == 0 {
+		return []models.AssetDetail{}, 0, nil
+	}
+
+	pagedArgs := append(args, pageSize, (page-1)*pageSize)
+	selectQueryString := fmt.Sprintf("%s %s ORDER BY a.created_at DESC LIMIT ? OFFSET ?", baseSelect, whereStatement)
+
+	selectQuery := database.SX.Rebind(selectQueryString)
+	err = database.SX.Select(&assets, selectQuery, pagedArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to execute asset select query: %w", err)
+	}
+
+	return assets, totalRecords, nil
+}
+
+func GetAssetForUnassignment(tx *sqlx.Tx, assetID string) (*models.AssetAssignmentInfo, error) {
+	var info models.AssetAssignmentInfo
+	SQL := `
+				SELECT 
+				    status, assigned_to 
+				FROM 
+				    asset_table 
+				WHERE 
+				    id = $1 
+				FOR UPDATE
+				`
+	err := tx.Get(&info, SQL, assetID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("asset with ID %s not found", assetID)
+		}
+		return nil, fmt.Errorf("failed to get asset for unassignment: %w", err)
+	}
+	return &info, nil
+}
+
+func UpdateAssetForUnassignment(tx *sqlx.Tx, assetID, updatedByID string) error {
+	SQL := `UPDATE asset_table 
+            SET status = 'available', assigned_to = NULL, updated_by = ?, updated_at = NOW() 
+            WHERE id = ?`
+
+	query := database.SX.Rebind(SQL)
+	_, err := tx.Exec(query, updatedByID, assetID)
+	if err != nil {
+		return fmt.Errorf("failed to update asset for unassignment: %w", err)
+	}
+	return nil
+}
+
+func CloseAssignmentLog(tx *sqlx.Tx, assetID, reason, retrievedByID string) error {
+	SQL := `UPDATE assigned_log_table 
+            SET end_at = NOW(), reason_of_retrieval = ?, retrieved_by = ?
+            WHERE asset_id = ? AND end_at IS NULL`
+
+	query := database.SX.Rebind(SQL)
+	// Add retrievedByID to the arguments
+	result, err := tx.Exec(query, reason, retrievedByID, assetID)
+	if err != nil {
+		return fmt.Errorf("failed to close assignment log: %w", err)
+	}
+
+	// ... (rest of the function is the same) ...
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("could not verify log update: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no active assignment log found for asset ID %s", assetID)
+	}
+
 	return nil
 }

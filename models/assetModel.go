@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 )
@@ -78,4 +79,34 @@ type AccessoriesSpecs struct {
 
 type AssignAssetRequest struct {
 	EmployeeID string `json:"employee_id"`
+}
+
+type AssetDetail struct {
+	ID              string         `json:"id" db:"id"`
+	Brand           string         `json:"brand" db:"brand"`
+	Model           string         `json:"model" db:"model"`
+	Type            string         `json:"type" db:"type"`
+	SerialNo        string         `json:"serial_no" db:"serial_no"`
+	Status          string         `json:"status" db:"status"`
+	OwnedBy         string         `json:"owned_by" db:"owned_by"`
+	PurchaseDate    *time.Time     `json:"purchase_date" db:"purchase_date"`
+	WarrantyEnd     *time.Time     `json:"warranty_end" db:"warranty_end"`
+	CreatedAt       time.Time      `json:"created_at" db:"created_at"`
+	AssignedToID    sql.NullString `json:"assigned_to_id" db:"assigned_to_id"`
+	AssignedToName  sql.NullString `json:"assigned_to_name" db:"assigned_to_name"`
+	AssignedToEmail sql.NullString `json:"assigned_to_email" db:"assigned_to_email"`
+}
+
+type GetAssetsResponse struct {
+	Data       []AssetDetail  `json:"data"`
+	Pagination PaginationInfo `json:"pagination"`
+}
+
+type UnassignAssetRequest struct {
+	Reason string `json:"reason_of_retrieval" binding:"required"`
+}
+
+type AssetAssignmentInfo struct {
+	Status     string `db:"status"`
+	AssignedTo string `db:"assigned_to"`
 }

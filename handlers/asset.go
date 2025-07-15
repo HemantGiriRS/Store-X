@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
+	"math"
 	"net/http"
 	"storex/database"
 	"storex/database/dbHelper"
 	"storex/middlewares"
 	"storex/models"
 	"storex/utils"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -224,5 +226,155 @@ func AssignAsset(w http.ResponseWriter, r *http.Request) {
 	response := map[string]string{
 		"message": "Asset assigned successfully",
 	}
-	utils.EncodeResponse(w, http.StatusOK, response)
+	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
+		logrus.Error(err)
+	}
+}
+
+func GetAssets(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	filters := make(map[string]string)
+
+	// 1. Parse and validate filters
+	if q := queryParams.Get("q"); q != "" {
+		filters["q"] = q
+	}
+
+	if assetType := strings.ToLower(queryParams.Get("type")); assetType != "" {
+		if utils.IsValidAssetType(assetType) {
+			filters["type"] = assetType
+		}
+	}
+
+	if status := strings.ToLower(queryParams.Get("status")); status != "" {
+		if utils.IsValidAssetStatus(status) {
+			filters["status"] = status
+		}
+	}
+
+	// Correctly handle the case-sensitive 'owned_by' filter
+	if ownedByInput := strings.ToLower(queryParams.Get("owned_by")); ownedByInput != "" {
+		if dbOwnerValue, isValid := utils.GetValidAssetOwner(ownedByInput); isValid {
+			filters["owned_by"] = dbOwnerValue
+		}
+	}
+
+	// 2. Sanitize pagination parameters
+	page, err := strconv.Atoi(queryParams.Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	pageSize, err := strconv.Atoi(queryParams.Get("pageSize"))
+	if err != nil || pageSize < 1 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	// 3. Call database helper
+	assets, totalRecords, err := dbHelper.GetAssetsFiltered(filters, page, pageSize)
+	if err != nil {
+		logrus.Errorf("Failed to get assets from database: %v", err)
+		http.Error(w, "Failed to retrieve asset data", http.StatusInternalServerError)
+		return
+	}
+
+	// 4. Calculate pagination metadata
+	totalPages := 0
+	if totalRecords > 0 {
+		totalPages = int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	}
+
+	// 5. Assemble and send response
+	response := models.GetAssetsResponse{
+		Data: assets,
+		Pagination: models.PaginationInfo{
+			CurrentPage:  page,
+			PageSize:     pageSize,
+			TotalRecords: totalRecords,
+			TotalPages:   totalPages,
+		},
+	}
+	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
+		logrus.Error(err)
+	}
+}
+
+func UnassignAsset(w http.ResponseWriter, r *http.Request) {
+	// 1. Get IDs from context and URL.
+	vars := mux.Vars(r)
+	assetID := vars["asset_id"]
+
+	retrieverIDVal := r.Context().Value(middlewares.UserIDKey)
+	if retrieverIDVal == nil {
+		http.Error(w, "Unauthorized: could not identify user", http.StatusUnauthorized)
+		return
+	}
+	retrieverID, _ := retrieverIDVal.(uuid.UUID)
+
+	// 2. Decode request body.
+	var req models.UnassignAssetRequest
+	if err := utils.DecodeRequest(r, &req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	if req.Reason == "" {
+		http.Error(w, "reason_of_retrieval is a required field", http.StatusBadRequest)
+		return
+	}
+
+	// 3. Start the database transaction.
+	txErr := database.Tx(func(tx *sqlx.Tx) error {
+		// A. Check if the asset is actually assigned and get the employee ID.
+		assetInfo, err := dbHelper.GetAssetForUnassignment(tx, assetID)
+		if err != nil {
+			return err // Will be handled as 404 or 500 below.
+		}
+		if assetInfo.Status != "assigned" {
+			return fmt.Errorf("asset is not currently assigned (status: %s)", assetInfo.Status)
+		}
+		if assetInfo.AssignedTo == "" {
+			return fmt.Errorf("asset is marked as assigned but has no employee ID linked")
+		}
+
+		// B. Close the active assignment log entry, now passing the retriever's ID.
+		err = dbHelper.CloseAssignmentLog(tx, assetID, req.Reason, retrieverID.String())
+		if err != nil {
+			return err
+		}
+
+		// C. Decrement the employee's asset count.
+		err = dbHelper.DecrementEmployeeAssetCount(tx, assetInfo.AssignedTo)
+		if err != nil {
+			return err
+		}
+
+		// D. Finally, update the asset itself to be available.
+		err = dbHelper.UpdateAssetForUnassignment(tx, assetID, retrieverID.String())
+		if err != nil {
+			return err
+		}
+
+		return nil // Success!
+	})
+
+	// 4. Handle the final result of the transaction.
+	if txErr != nil {
+		logrus.Errorf("Transaction failed for un-assigning asset: %v", txErr)
+		if strings.Contains(txErr.Error(), "not found") {
+			http.Error(w, txErr.Error(), http.StatusNotFound)
+		} else if strings.Contains(txErr.Error(), "not currently assigned") || strings.Contains(txErr.Error(), "no active assignment log") {
+			http.Error(w, txErr.Error(), http.StatusConflict) // 409 Conflict is appropriate here.
+		} else {
+			http.Error(w, "Failed to un-assign asset. The operation was rolled back.", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// 5. Send success response.
+	response := map[string]string{
+		"message": "Asset un-assigned successfully and is now available",
+	}
+	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
+		logrus.Error(err)
+	}
 }

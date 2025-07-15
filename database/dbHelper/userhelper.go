@@ -156,3 +156,14 @@ func GetEmployeesFiltered(filters map[string]string, page, pageSize int) ([]mode
 
 	return employees, totalRecords, nil
 }
+
+func DecrementEmployeeAssetCount(tx *sqlx.Tx, employeeID string) error {
+	// We ensure the count never goes below zero.
+	SQL := `UPDATE employee_table SET asset_status = asset_status - 1 WHERE id = ? AND asset_status > 0`
+	query := database.SX.Rebind(SQL)
+	_, err := tx.Exec(query, employeeID)
+	if err != nil {
+		return fmt.Errorf("failed to decrement asset count for employee %s: %w", employeeID, err)
+	}
+	return nil
+}

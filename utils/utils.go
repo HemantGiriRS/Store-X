@@ -55,27 +55,27 @@ var ValidAssignmentStatus = map[string]bool{
 	"not_assigned": true,
 }
 
-var ValidAssetTypes = map[string]bool{
-	"laptop":      true,
-	"mouse":       true,
-	"monitor":     true,
-	"hard-disk":   true,
-	"pen-drive":   true,
-	"mobile":      true,
-	"sim":         true,
-	"accessories": true,
+var validAssetTypes = map[string]bool{"laptop": true, "mouse": true, "monitor": true, "hard-disk": true, "pen-drive": true, "mobile": true, "sim": true, "accessories": true}
+var validAssetStatuses = map[string]bool{"available": true, "assigned": true, "waitForRepair": true, "service": true, "damage": true, "deleted": true}
+
+// This map handles the case-sensitivity of the 'owned_by' ENUM.
+var validAssetOwnerMap = map[string]string{
+	"remotestate": "RemoteState",
+	"client":      "Client",
 }
 
-var ValidAssetStatuses = map[string]bool{
-	"available":     true,
-	"assigned":      true,
-	"waitForRepair": true,
-	"service":       true,
-	"damage":        true,
-	"deleted":       true,
+func IsValidAssetType(assetType string) bool {
+	_, ok := validAssetTypes[assetType]
+	return ok
 }
 
-var ValidAssetOwnedBy = map[string]bool{
-	"RemoteState": true,
-	"Client":      true,
+func IsValidAssetStatus(status string) bool {
+	_, ok := validAssetStatuses[status]
+	return ok
+}
+
+// GetValidAssetOwner validates and returns the correctly cased string for the database.
+func GetValidAssetOwner(owner string) (string, bool) {
+	dbValue, ok := validAssetOwnerMap[owner]
+	return dbValue, ok
 }

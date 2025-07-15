@@ -40,7 +40,8 @@ func SetupRoutes() http.Handler {
 	requireRoleAAM.Use(middlewares.Auth, middlewares.RequireRole("admin", "asset_manager"))
 	requireRoleAAM.HandleFunc("/assets", handlers.CreateAsset).Methods("POST")
 	requireRoleAAM.HandleFunc("/assets/{asset_id}/assign", handlers.AssignAsset).Methods("POST")
-	//requireRoleAAM.HandleFunc("/assets", handlers.GetAssets).Methods("GET")
+	requireRoleAAM.HandleFunc("/assets", handlers.GetAssets).Methods("GET")
+	requireRoleAAM.HandleFunc("/assets/{asset_id}/unassign", handlers.UnassignAsset).Methods("POST")
 
 	//private routes only for admin
 	adminOnly := app.PathPrefix("/admin").Subrouter()
