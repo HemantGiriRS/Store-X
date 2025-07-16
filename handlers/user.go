@@ -3,12 +3,15 @@ package handlers
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"math"
 	"net/http"
+	"storex/database"
 	"storex/database/dbHelper"
 	"storex/middlewares"
 	"storex/models"
@@ -267,5 +270,109 @@ func GetEmployees(w http.ResponseWriter, r *http.Request) {
 			TotalPages:   totalPages,
 		},
 	}
-	utils.EncodeResponse(w, http.StatusOK, response)
+	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
+		logrus.Errorf("Failed to send success response: %v", err)
+	}
+}
+
+func DeleteEmployee(w http.ResponseWriter, r *http.Request) {
+	// 1. Get IDs from context and URL
+	vars := mux.Vars(r)
+	employeeID := vars["employee_id"]
+
+	archiverIDVal := r.Context().Value(middlewares.UserIDKey)
+	if archiverIDVal == nil {
+		http.Error(w, "Unauthorized: could not identify user", http.StatusUnauthorized)
+		return
+	}
+	archiverID, _ := archiverIDVal.(uuid.UUID)
+
+	// 2. Start the database transaction
+	txErr := database.Tx(func(tx *sqlx.Tx) error {
+		state, err := dbHelper.GetEmployeeStateForDeletion(tx, employeeID)
+		if err != nil {
+			return err // Will be handled as 404 or 500.
+		}
+
+		if state.ArchivedAt.Valid {
+			return fmt.Errorf("employee has already been archived")
+		}
+
+		if state.AssetStatus > 0 {
+			return fmt.Errorf("cannot archive employee. They still have %d assets assigned. Please retrieve all assets first", state.AssetStatus)
+		}
+
+		return dbHelper.SoftDeleteEmployee(tx, employeeID, archiverID.String())
+	})
+
+	// 3. Handle the final result of the transaction
+	if txErr != nil {
+		logrus.Errorf("Transaction failed for deleting employee: %v", txErr)
+		if strings.Contains(txErr.Error(), "not found") {
+			http.Error(w, txErr.Error(), http.StatusNotFound)
+		} else if strings.Contains(txErr.Error(), "already been archived") || strings.Contains(txErr.Error(), "assets assigned") {
+			// Business logic violations are conflicts.
+			http.Error(w, txErr.Error(), http.StatusConflict)
+		} else {
+			http.Error(w, "Failed to delete employee.", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// 4. Send success response
+	response := map[string]string{
+		"message": "Employee archived successfully",
+	}
+	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
+		logrus.Errorf("Failed to send success response: %v", err)
+	}
+}
+
+func GetEmployeeTimeline(w http.ResponseWriter, r *http.Request) {
+	// 1. Get employee_id from URL
+	vars := mux.Vars(r)
+	employeeID := vars["employee_id"]
+
+	// 2. Parse and sanitize pagination parameters
+	queryParams := r.URL.Query()
+	page, err := strconv.Atoi(queryParams.Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	pageSize, err := strconv.Atoi(queryParams.Get("pageSize"))
+	if err != nil || pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	// 3. Call the database helper
+	timelineEvents, totalRecords, err := dbHelper.GetEmployeeTimeline(employeeID, page, pageSize)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, "Employee not found", http.StatusNotFound)
+			return
+		}
+		logrus.Errorf("Failed to get employee timeline from database: %v", err)
+		http.Error(w, "Failed to retrieve employee timeline", http.StatusInternalServerError)
+		return
+	}
+
+	// 4. Calculate pagination
+	totalPages := 0
+	if totalRecords > 0 {
+		totalPages = int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	}
+
+	// 5. Assemble and send the final response
+	response := models.GetEmployeeTimelineResponse{
+		Data: timelineEvents,
+		Pagination: models.PaginationInfo{
+			CurrentPage:  page,
+			PageSize:     pageSize,
+			TotalRecords: totalRecords,
+			TotalPages:   totalPages,
+		},
+	}
+	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
+		logrus.Errorf("Failed to send success response: %v", err)
+	}
 }

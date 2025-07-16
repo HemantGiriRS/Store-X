@@ -114,3 +114,26 @@ type AssetAssignmentInfo struct {
 type DeleteAssetRequest struct {
 	Reason string `json:"reason"`
 }
+
+type SendForServiceRequest struct {
+	AssignedTo  string `json:"assigned_to"`
+	Price       string `json:"price"`
+	Description string `json:"description"`
+}
+
+type ReceiveFromServiceRequest struct {
+	Notes string `json:"notes"`
+}
+
+type TimelineEvent struct {
+	ID          string    `json:"id" db:"id"`
+	EventType   string    `json:"event_type" db:"event_type"`
+	EventDate   time.Time `json:"event_date" db:"event_date"`
+	Description string    `json:"description" db:"description"`
+	ActorName   string    `json:"actor_name" db:"actor_name"`
+}
+
+type GetAssetTimelineResponse struct {
+	Data       []TimelineEvent `json:"data"`
+	Pagination PaginationInfo  `json:"pagination"`
+}

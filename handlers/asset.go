@@ -391,7 +391,7 @@ func DeleteAsset(w http.ResponseWriter, r *http.Request) {
 	}
 	deleterID, _ := deleterIDVal.(uuid.UUID)
 
-	// 2. Decode the  request body
+	// 2. Decode the request body
 	var req models.DeleteAssetRequest
 	_ = utils.DecodeRequest(r, &req)
 
@@ -444,5 +444,174 @@ func DeleteAsset(w http.ResponseWriter, r *http.Request) {
 	response := map[string]string{
 		"message": "Asset deleted successfully",
 	}
-	utils.EncodeResponse(w, http.StatusOK, response)
+	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
+		logrus.Error(err)
+	}
+}
+
+func SendAssetForService(w http.ResponseWriter, r *http.Request) {
+	// 1. Get IDs from context and URL
+	vars := mux.Vars(r)
+	assetID := vars["asset_id"]
+
+	senderIDVal := r.Context().Value(middlewares.UserIDKey)
+	if senderIDVal == nil {
+		http.Error(w, "Unauthorized: could not identify user", http.StatusUnauthorized)
+		return
+	}
+	senderID, _ := senderIDVal.(uuid.UUID)
+
+	// 2. Decode the request body
+	var req models.SendForServiceRequest
+	if err := utils.DecodeRequest(r, &req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	if req.AssignedTo == "" || req.Description == "" {
+		http.Error(w, "assigned_to and description are required fields", http.StatusBadRequest)
+		return
+	}
+
+	// 3. Start the database transaction
+	txErr := database.Tx(func(tx *sqlx.Tx) error {
+		// A. Get the asset's current status securely.
+		status, err := dbHelper.GetAssetStatusForDelete(tx, assetID)
+		if err != nil {
+			return err // Will be handled as 404 or 500.
+		}
+
+		// B. Check if the asset is in a valid state to be sent for service.
+		switch status {
+		case "available", "damage", "waitForRepair":
+			return dbHelper.CreateServiceLogAndUpdateAsset(tx, assetID, req, senderID.String())
+		default:
+			return fmt.Errorf("asset cannot be sent for service. Current status is '%s'", status)
+		}
+	})
+
+	// 4. Handle the final result of the transaction
+	if txErr != nil {
+		logrus.Errorf("Transaction failed for sending asset to service: %v", txErr)
+		if strings.Contains(txErr.Error(), "not found") {
+			http.Error(w, txErr.Error(), http.StatusNotFound)
+		} else if strings.Contains(txErr.Error(), "cannot be sent for service") {
+			// This is our specific business rule violation.
+			http.Error(w, txErr.Error(), http.StatusConflict)
+		} else {
+			http.Error(w, "Failed to send asset for service.", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// 5. Send success response
+	response := map[string]string{
+		"message": "Asset successfully sent for service",
+	}
+	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
+		logrus.Error(err)
+	}
+}
+
+func ReceiveAssetFromService(w http.ResponseWriter, r *http.Request) {
+	// 1. Get IDs from context and URL
+	vars := mux.Vars(r)
+	assetID := vars["asset_id"]
+
+	receiverIDVal := r.Context().Value(middlewares.UserIDKey)
+	if receiverIDVal == nil {
+		http.Error(w, "Unauthorized: could not identify user", http.StatusUnauthorized)
+		return
+	}
+	receiverID, _ := receiverIDVal.(uuid.UUID)
+
+	// 2. Decode the optional request body
+	var req models.ReceiveFromServiceRequest
+	if err := utils.DecodeRequest(r, &req); err != nil {
+		logrus.Error(err)
+	}
+
+	// 3. Start the database transaction
+	txErr := database.Tx(func(tx *sqlx.Tx) error {
+		status, err := dbHelper.GetAssetStatusForDelete(tx, assetID)
+		if err != nil {
+			return err // Will be handled as 404 or 500.
+		}
+
+		if status != "service" {
+			return fmt.Errorf("asset cannot be received from service. Current status is '%s'", status)
+		}
+
+		return dbHelper.CloseServiceLogAndUpdateAsset(tx, assetID, receiverID.String(), req.Notes)
+	})
+
+	// 4. Handle the final result of the transaction
+	if txErr != nil {
+		logrus.Errorf("Transaction failed for receiving asset from service: %v", txErr)
+		if strings.Contains(txErr.Error(), "not found") {
+			http.Error(w, txErr.Error(), http.StatusNotFound)
+		} else if strings.Contains(txErr.Error(), "cannot be received") || strings.Contains(txErr.Error(), "no active service log") {
+			// Business logic violations
+			http.Error(w, txErr.Error(), http.StatusConflict)
+		} else {
+			http.Error(w, "Failed to receive asset from service.", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// 5. Send success response
+	response := map[string]string{
+		"message": "Asset successfully received from service and is now available",
+	}
+	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
+		logrus.Error(err)
+	}
+}
+
+func GetAssetTimeline(w http.ResponseWriter, r *http.Request) {
+	// 1. Get asset_id from URL
+	vars := mux.Vars(r)
+	assetID := vars["asset_id"]
+
+	// 2. Parse and sanitize pagination parameters
+	queryParams := r.URL.Query()
+	page, err := strconv.Atoi(queryParams.Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	pageSize, err := strconv.Atoi(queryParams.Get("pageSize"))
+	if err != nil || pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	// 3. Call the database helper
+	timelineEvents, totalRecords, err := dbHelper.GetAssetTimeline(assetID, page, pageSize)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, "Asset not found", http.StatusNotFound)
+			return
+		}
+		logrus.Errorf("Failed to get asset timeline from database: %v", err)
+		http.Error(w, "Failed to retrieve asset timeline", http.StatusInternalServerError)
+		return
+	}
+
+	// 4. Calculate pagination metadata
+	totalPages := 0
+	if totalRecords > 0 {
+		totalPages = int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	}
+
+	// 5. send response
+	response := models.GetAssetTimelineResponse{
+		Data: timelineEvents,
+		Pagination: models.PaginationInfo{
+			CurrentPage:  page,
+			PageSize:     pageSize,
+			TotalRecords: totalRecords,
+			TotalPages:   totalPages,
+		},
+	}
+	if err := utils.EncodeResponse(w, http.StatusOK, response); err != nil {
+		logrus.Error(err)
+	}
 }

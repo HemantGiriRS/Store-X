@@ -34,6 +34,8 @@ func SetupRoutes() http.Handler {
 	requireRoleAEM.Use(middlewares.Auth, middlewares.RequireRole("admin", "employee_manager"))
 	requireRoleAEM.HandleFunc("/register-employee", handlers.SignUp).Methods("POST")
 	requireRoleAEM.HandleFunc("/employees", handlers.GetEmployees).Methods("GET")
+	requireRoleAEM.HandleFunc("/employees/{employee_id}", handlers.DeleteEmployee).Methods("DELETE")
+	requireRoleAEM.HandleFunc("/employees/{employee_id}/timeline", handlers.GetEmployeeTimeline).Methods("GET")
 
 	//protected routes only for admin and asset manager
 	requireRoleAAM := app.PathPrefix("/private").Subrouter()
@@ -43,7 +45,10 @@ func SetupRoutes() http.Handler {
 	requireRoleAAM.HandleFunc("/assets", handlers.GetAssets).Methods("GET")
 	requireRoleAAM.HandleFunc("/assets/{asset_id}/unassign", handlers.UnassignAsset).Methods("POST")
 	requireRoleAAM.HandleFunc("/assets/{asset_id}", handlers.DeleteAsset).Methods("DELETE")
-	
+	requireRoleAAM.HandleFunc("/assets/{asset_id}/service", handlers.SendAssetForService).Methods("POST")
+	requireRoleAAM.HandleFunc("/assets/{asset_id}/receive", handlers.ReceiveAssetFromService).Methods("POST")
+	requireRoleAAM.HandleFunc("/assets/{asset_id}/timeline", handlers.GetAssetTimeline).Methods("GET")
+
 	//private routes only for admin
 	adminOnly := app.PathPrefix("/admin").Subrouter()
 	adminOnly.Use(middlewares.Auth, middlewares.RequireRole("admin"))

@@ -167,3 +167,98 @@ func DecrementEmployeeAssetCount(tx *sqlx.Tx, employeeID string) error {
 	}
 	return nil
 }
+
+func GetEmployeeStateForDeletion(tx *sqlx.Tx, employeeID string) (*models.EmployeeState, error) {
+	var state models.EmployeeState
+	query := "SELECT asset_status, archived_at FROM employee_table WHERE id = $1 FOR UPDATE"
+	err := tx.Get(&state, query, employeeID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("employee with ID %s not found", employeeID)
+		}
+		return nil, fmt.Errorf("failed to get employee state for deletion: %w", err)
+	}
+	return &state, nil
+}
+
+func SoftDeleteEmployee(tx *sqlx.Tx, employeeID, archiverID string) error {
+	SQL := `
+        UPDATE employee_table 
+        SET 
+            archived_at = NOW(), 
+            archived_by = ?,
+            updated_at = NOW(),
+            updated_by = ?
+        WHERE id = ?`
+
+	query := database.SX.Rebind(SQL)
+	_, err := tx.Exec(query, archiverID, archiverID, employeeID)
+	if err != nil {
+		return fmt.Errorf("failed to soft delete employee: %w", err)
+	}
+	return nil
+}
+
+func GetEmployeeTimeline(employeeID string, page, pageSize int) ([]models.TimelineEvent, int64, error) {
+	var timelineEvents []models.TimelineEvent
+	var totalRecords int64
+
+	// --- 1. Count all assignment and retrieval events for the employee ---
+	countQueryString := `
+        SELECT
+            (SELECT COUNT(*) FROM assigned_log_table WHERE employee_id = $1) +
+            (SELECT COUNT(*) FROM assigned_log_table WHERE employee_id = $1 AND end_at IS NOT NULL)
+    `
+	err := database.SX.Get(&totalRecords, countQueryString, employeeID)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to execute employee timeline count query: %w", err)
+	}
+
+	if totalRecords == 0 {
+		return []models.TimelineEvent{}, 0, nil
+	}
+
+	// --- 2. Fetch the unified, sorted, and paginated data ---
+	selectQueryString := `
+        SELECT * FROM (
+            -- Event Type 1: Asset Assignment
+            SELECT 
+                al.id::text,
+                'Assignment' AS event_type, 
+                al.start_at AS event_date,
+                'Asset assigned: ' || a.brand || ' ' || a.model || ' (S/N: ' || a.serial_no || ')' AS description,
+                actor.name AS actor_name
+            FROM assigned_log_table al
+            JOIN asset_table a ON al.asset_id = a.id
+            JOIN employee_table actor ON al.assigned_by = actor.id
+            WHERE al.employee_id = ?
+
+            UNION ALL
+
+            -- Event Type 2: Asset Retrieval
+            SELECT 
+                al.id::text || '-ret' AS id,
+                'Retrieval' AS event_type, 
+                al.end_at AS event_date,
+                'Asset retrieved: ' || a.brand || ' ' || a.model || '. Reason: ' || COALESCE(al.reason_of_retrieval, 'N/A') AS description,
+                retriever.name AS actor_name
+            FROM assigned_log_table al
+            JOIN asset_table a ON al.asset_id = a.id
+            JOIN employee_table retriever ON al.retrieved_by = retriever.id
+            WHERE al.employee_id = ? AND al.end_at IS NOT NULL
+
+        ) AS employee_timeline
+        ORDER BY event_date DESC
+        LIMIT ? OFFSET ?`
+
+	offset := (page - 1) * pageSize
+	pagedArgs := []interface{}{employeeID, employeeID, pageSize, offset}
+
+	selectQuery := database.SX.Rebind(selectQueryString)
+	err = database.SX.Select(&timelineEvents, selectQuery, pagedArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to execute employee timeline select query: %w", err)
+	}
+
+	return timelineEvents, totalRecords, nil
+}

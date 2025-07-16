@@ -292,3 +292,158 @@ func SoftDeleteAsset(tx *sqlx.Tx, assetID, archivedByID string) error {
 	}
 	return nil
 }
+
+func CreateServiceLogAndUpdateAsset(tx *sqlx.Tx, assetID string, req models.SendForServiceRequest, assignedByID string) error {
+	// 1. Insert the new record into the service_table
+	serviceSQL := `
+        INSERT INTO service_table 
+            (asset_id, assigned_to, assigned_by, price, description, assigned_date) 
+        VALUES (?, ?, ?, ?, ?, NOW())`
+
+	serviceQuery := database.SX.Rebind(serviceSQL)
+	_, err := tx.Exec(serviceQuery, assetID, req.AssignedTo, assignedByID, req.Price, req.Description)
+	if err != nil {
+		return fmt.Errorf("failed to create service log: %w", err)
+	}
+
+	// 2. Update the asset's status in the asset_table
+	assetSQL := `
+        UPDATE asset_table 
+        SET status = 'service', updated_by = ?, updated_at = NOW() 
+        WHERE id = ?`
+
+	assetQuery := database.SX.Rebind(assetSQL)
+	_, err = tx.Exec(assetQuery, assignedByID, assetID)
+	if err != nil {
+		return fmt.Errorf("failed to update asset status to 'service': %w", err)
+	}
+
+	return nil
+}
+
+func CloseServiceLogAndUpdateAsset(tx *sqlx.Tx, assetID, retrievedByID, notes string) error {
+	// 1. Update the service log to mark it as complete.
+	serviceSQL := `
+        UPDATE service_table 
+        SET 
+            received_date = NOW(), 
+            retrieved_by = ?,
+            notes = ?
+        WHERE 
+            asset_id = ? AND received_date IS NULL`
+
+	serviceQuery := database.SX.Rebind(serviceSQL)
+	result, err := tx.Exec(serviceQuery, retrievedByID, notes, assetID)
+	if err != nil {
+		return fmt.Errorf("failed to close service log: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("could not verify service log update: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no active service log found for asset ID %s", assetID)
+	}
+
+	// 2. Update the asset's status back to 'available'.
+	assetSQL := `
+        UPDATE asset_table 
+        SET status = 'available', updated_by = ?, updated_at = NOW() 
+        WHERE id = ?`
+
+	assetQuery := database.SX.Rebind(assetSQL)
+	_, err = tx.Exec(assetQuery, retrievedByID, assetID)
+	if err != nil {
+		return fmt.Errorf("failed to update asset status to 'available': %w", err)
+	}
+
+	return nil
+}
+
+func GetAssetTimeline(assetID string, page, pageSize int) ([]models.TimelineEvent, int64, error) {
+	var timelineEvents []models.TimelineEvent
+	var totalRecords int64
+
+	// --- COUNT QUERY (remains the same) ---
+	countQueryString := `
+        SELECT
+            (SELECT COUNT(*) FROM assigned_log_table WHERE asset_id = $1) +
+            (SELECT COUNT(*) FROM assigned_log_table WHERE asset_id = $1 AND end_at IS NOT NULL) +
+            (SELECT COUNT(*) FROM service_table WHERE asset_id = $1) +
+            (SELECT COUNT(*) FROM service_table WHERE asset_id = $1 AND received_date IS NOT NULL)
+    `
+	err := database.SX.Get(&totalRecords, countQueryString, assetID)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to execute timeline count query: %w", err)
+	}
+
+	if totalRecords == 0 {
+		return []models.TimelineEvent{}, 0, nil
+	}
+
+	selectQueryString := `
+        SELECT * FROM (
+            -- Event Type 1: Assignment to Employee
+            SELECT 
+                al.id::text, 
+                'Assignment' AS event_type, al.start_at AS event_date,
+                'Assigned to employee: ' || emp.name AS description,
+                actor.name AS actor_name
+            FROM assigned_log_table al
+            JOIN employee_table emp ON al.employee_id = emp.id
+            JOIN employee_table actor ON al.assigned_by = actor.id
+            WHERE al.asset_id = ?
+
+            UNION ALL
+
+            -- Event Type 2: Retrieval from Employee
+            SELECT 
+                al.id::text || '-ret' AS id,
+                'Retrieval' AS event_type, al.end_at AS event_date,
+                'Retrieved from employee: ' || emp.name || '. Reason: ' || COALESCE(al.reason_of_retrieval, 'N/A') AS description,
+                retriever.name AS actor_name
+            FROM assigned_log_table al
+            JOIN employee_table emp ON al.employee_id = emp.id
+            JOIN employee_table retriever ON al.retrieved_by = retriever.id
+            WHERE al.asset_id = ? AND al.end_at IS NOT NULL
+
+            UNION ALL
+
+            -- Event Type 3: Sent for Service
+            SELECT
+                st.id::text,
+                'Service Start' AS event_type, st.assigned_date AS event_date,
+                'Sent for service to: ' || st.assigned_to || '. Issue: ' || st.description AS description,
+                actor.name AS actor_name
+            FROM service_table st
+            JOIN employee_table actor ON st.assigned_by = actor.id
+            WHERE st.asset_id = ?
+
+            UNION ALL
+
+            -- Event Type 4: Received from Service
+            SELECT
+                st.id::text || '-rec' as id,
+                'Service End' AS event_type, st.received_date AS event_date,
+                'Received from service: ' || st.assigned_to || '. Notes: ' || COALESCE(st.notes, 'N/A') as description,
+                retriever.name as actor_name
+            FROM service_table st
+            JOIN employee_table retriever ON st.retrieved_by = retriever.id
+            WHERE st.asset_id = ? AND st.received_date IS NOT NULL
+
+        ) AS timeline_events
+        ORDER BY event_date DESC
+        LIMIT ? OFFSET ?`
+
+	offset := (page - 1) * pageSize
+	pagedArgs := []interface{}{assetID, assetID, assetID, assetID, pageSize, offset}
+
+	selectQuery := database.SX.Rebind(selectQueryString)
+	err = database.SX.Select(&timelineEvents, selectQuery, pagedArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to execute timeline select query: %w", err)
+	}
+
+	return timelineEvents, totalRecords, nil
+}

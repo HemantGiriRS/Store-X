@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type SignInRequest struct {
 	Email string `json:"email" db:"email"`
@@ -47,4 +50,14 @@ type EmployeeDetail struct {
 type GetEmployeesResponse struct {
 	Data       []EmployeeDetail `json:"data"`
 	Pagination PaginationInfo   `json:"pagination"`
+}
+
+type EmployeeState struct {
+	AssetStatus int          `db:"asset_status"`
+	ArchivedAt  sql.NullTime `db:"archived_at"`
+}
+
+type GetEmployeeTimelineResponse struct {
+	Data       []TimelineEvent `json:"data"`
+	Pagination PaginationInfo  `json:"pagination"`
 }
