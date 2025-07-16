@@ -247,13 +247,11 @@ func CloseAssignmentLog(tx *sqlx.Tx, assetID, reason, retrievedByID string) erro
             WHERE asset_id = ? AND end_at IS NULL`
 
 	query := database.SX.Rebind(SQL)
-	// Add retrievedByID to the arguments
 	result, err := tx.Exec(query, reason, retrievedByID, assetID)
 	if err != nil {
 		return fmt.Errorf("failed to close assignment log: %w", err)
 	}
 
-	// ... (rest of the function is the same) ...
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return fmt.Errorf("could not verify log update: %w", err)
@@ -262,5 +260,35 @@ func CloseAssignmentLog(tx *sqlx.Tx, assetID, reason, retrievedByID string) erro
 		return fmt.Errorf("no active assignment log found for asset ID %s", assetID)
 	}
 
+	return nil
+}
+
+func GetAssetStatusForDelete(tx *sqlx.Tx, assetID string) (string, error) {
+	var status string
+	err := tx.Get(&status, "SELECT status FROM asset_table WHERE id = $1 FOR UPDATE", assetID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("asset with ID %s not found", assetID)
+		}
+		return "", fmt.Errorf("failed to get asset status for deletion: %w", err)
+	}
+	return status, nil
+}
+
+func SoftDeleteAsset(tx *sqlx.Tx, assetID, archivedByID string) error {
+	SQL := `UPDATE asset_table 
+            SET 
+                status = 'deleted', 
+                archived_at = NOW(), 
+                archived_by = ?,
+                updated_at = NOW(),
+                updated_by = ?
+            WHERE id = ?`
+
+	query := database.SX.Rebind(SQL)
+	_, err := tx.Exec(query, archivedByID, archivedByID, assetID)
+	if err != nil {
+		return fmt.Errorf("failed to soft delete asset: %w", err)
+	}
 	return nil
 }

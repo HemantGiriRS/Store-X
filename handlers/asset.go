@@ -378,3 +378,71 @@ func UnassignAsset(w http.ResponseWriter, r *http.Request) {
 		logrus.Error(err)
 	}
 }
+
+func DeleteAsset(w http.ResponseWriter, r *http.Request) {
+	// 1. Get IDs from context and URL
+	vars := mux.Vars(r)
+	assetID := vars["asset_id"]
+
+	deleterIDVal := r.Context().Value(middlewares.UserIDKey)
+	if deleterIDVal == nil {
+		http.Error(w, "Unauthorized: could not identify user", http.StatusUnauthorized)
+		return
+	}
+	deleterID, _ := deleterIDVal.(uuid.UUID)
+
+	// 2. Decode the  request body
+	var req models.DeleteAssetRequest
+	_ = utils.DecodeRequest(r, &req)
+
+	// 3. Start the database transaction
+	txErr := database.Tx(func(tx *sqlx.Tx) error {
+		// A. Get the asset's current status securely.
+		status, err := dbHelper.GetAssetStatusForDelete(tx, assetID)
+		if err != nil {
+			return err
+		}
+
+		// B. Apply rules.
+		switch status {
+		case "available", "waitForRepair", "damage":
+			return dbHelper.SoftDeleteAsset(tx, assetID, deleterID.String())
+
+		case "assigned":
+			return fmt.Errorf("asset is currently assigned. It cannot be deleted without being retrieved first")
+
+		case "service":
+			return fmt.Errorf("asset is currently in service. It cannot be deleted")
+
+		case "deleted":
+			return fmt.Errorf("asset has already been deleted")
+
+		default:
+			// This case handles any other unexpected statuses.
+			return fmt.Errorf("asset cannot be deleted from its current unknown status: %s", status)
+		}
+	})
+
+	// 4. Handle the final result of the transaction
+	if txErr != nil {
+		logrus.Errorf("Transaction failed for deleting asset: %v", txErr)
+		// Provide specific HTTP status codes based on the error.
+		if strings.Contains(txErr.Error(), "not found") {
+			http.Error(w, txErr.Error(), http.StatusNotFound)
+		} else if strings.Contains(txErr.Error(), "assigned") ||
+			strings.Contains(txErr.Error(), "in service") ||
+			strings.Contains(txErr.Error(), "already been deleted") {
+			http.Error(w, txErr.Error(), http.StatusConflict)
+		} else {
+			// For all other errors.
+			http.Error(w, "Failed to delete asset.", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// 5. Send success response
+	response := map[string]string{
+		"message": "Asset deleted successfully",
+	}
+	utils.EncodeResponse(w, http.StatusOK, response)
+}

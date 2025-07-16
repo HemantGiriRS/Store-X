@@ -103,10 +103,14 @@ type GetAssetsResponse struct {
 }
 
 type UnassignAssetRequest struct {
-	Reason string `json:"reason_of_retrieval" binding:"required"`
+	Reason string `json:"reason_of_retrieval"`
 }
 
 type AssetAssignmentInfo struct {
 	Status     string `db:"status"`
 	AssignedTo string `db:"assigned_to"`
+}
+
+type DeleteAssetRequest struct {
+	Reason string `json:"reason"`
 }
