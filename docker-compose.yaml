@@ -1,12 +1,12 @@
 services:
   db:
-    container_name: StoreX
+    container_name: store-x
     image: "postgres"
     ports:
       - "5433:5432"
     volumes:
       - ./pg-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=Hemant
-      - POSTGRES_PASSWORD=Hemant
+      - POSTGRES_USER=hemant
+      - POSTGRES_PASSWORD=rx
       - POSTGRES_DB=store-x

@@ -1,0 +1,2 @@
+ALTER TABLE service_table
+    ADD COLUMN IF NOT EXISTS notes TEXT;

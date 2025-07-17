@@ -1,0 +1,277 @@
+[
+  { "brand": "Dell", "model": "XPS 13", "type": "laptop", "serial_no": "LAP-DELL-001", "owned_by": "RemoteState", "specs": { "processor": "Intel i7", "ram_gb": 16, "storage_gb": 512, "os": "Windows 11" } },
+  { "brand": "Apple", "model": "MacBook Pro 14", "type": "laptop", "serial_no": "LAP-APL-001", "owned_by": "RemoteState", "specs": { "processor": "M2 Pro", "ram_gb": 16, "storage_gb": 512, "os": "macOS" } },
+  { "brand": "Logitech", "model": "MX Master 3S", "type": "mouse", "serial_no": "MOU-LOG-001", "owned_by": "RemoteState", "specs": { "connection_type": "wireless", "dpi": 8000, "number_of_buttons": 7 } },
+  { "brand": "Razer", "model": "Viper Mini", "type": "mouse", "serial_no": "MOU-RAZ-001", "owned_by": "Client", "specs": { "connection_type": "wired", "dpi": 8500, "number_of_buttons": 6 } },
+  { "brand": "Dell", "model": "U2721DE", "type": "monitor", "serial_no": "MON-DEL-001", "owned_by": "RemoteState", "specs": { "size_inch": 27, "resolution": "2560x1440", "refresh_rate_hz": 60 } },
+  { "brand": "LG", "model": "27GL83A-B", "type": "monitor", "serial_no": "MON-LG-001", "owned_by": "Client", "specs": { "size_inch": 27, "resolution": "2560x1440", "refresh_rate_hz": 144 } },
+  { "brand": "Samsung", "model": "970 EVO Plus", "type": "hard-disk", "serial_no": "HDD-SAM-001", "owned_by": "RemoteState", "specs": { "capacity_gb": 1000, "type": "SSD" } },
+  { "brand": "Seagate", "model": "IronWolf", "type": "hard-disk", "serial_no": "HDD-SEA-001", "owned_by": "Client", "specs": { "capacity_gb": 4000, "type": "HDD" } },
+  { "brand": "SanDisk", "model": "Extreme Pro", "type": "pen-drive", "serial_no": "PEN-SAN-001", "owned_by": "RemoteState", "specs": { "capacity_gb": 128, "usb_type": "USB 3.1" } },
+  { "brand": "Kingston", "model": "DataTraveler", "type": "pen-drive", "serial_no": "PEN-KIN-001", "owned_by": "Client", "specs": { "capacity_gb": 64, "usb_type": "USB 3.0" } },
+  { "brand": "Apple", "model": "iPhone 15", "type": "mobile", "serial_no": "MOB-APL-001", "owned_by": "RemoteState", "specs": { "imei": "353928012345670", "ram_gb": 6, "storage_gb": 128, "os": "iOS" } },
+  { "brand": "Google", "model": "Pixel 8", "type": "mobile", "serial_no": "MOB-GOO-001", "owned_by": "Client", "specs": { "imei": "358729018765431", "ram_gb": 8, "storage_gb": 128, "os": "Android" } },
+  { "brand": "Jio", "model": "Prepaid", "type": "sim", "serial_no": "SIM-JIO-001", "owned_by": "RemoteState", "specs": { "phone_number": "+918000000001", "operator": "Jio", "sim_type": "physical" } },
+  { "brand": "Airtel", "model": "Postpaid", "type": "sim", "serial_no": "SIM-AIR-001", "owned_by": "Client", "specs": { "phone_number": "+918000000002", "operator": "Airtel", "sim_type": "eSIM" } },
+  { "brand": "Anker", "model": "PowerCore", "type": "accessories", "serial_no": "ACC-ANK-001", "owned_by": "RemoteState", "specs": { "name": "Power Bank", "description": "10000mAh portable charger" } },
+  { "brand": "Logitech", "model": "K380", "type": "accessories", "serial_no": "ACC-LOG-001", "owned_by": "Client", "specs": { "name": "Bluetooth Keyboard", "description": "Multi-device wireless keyboard" } },
+  {
+    "brand": "Dell",
+    "model": "Latitude 7420",
+    "type": "laptop",
+    "serial_no": "LAP-DEL-LAT7420",
+    "owned_by": "RemoteState",
+    "purchase_date": "2023-05-10T00:00:00Z",
+    "specs": { "processor": "Intel Core i5", "ram_gb": 16, "storage_gb": 256, "os": "Windows 11 Pro" }
+  },
+  {
+    "brand": "Apple",
+    "model": "MacBook Air M1",
+    "type": "laptop",
+    "serial_no": "LAP-APL-AIRM1",
+    "owned_by": "RemoteState",
+    "purchase_date": "2023-08-15T00:00:00Z",
+    "specs": { "processor": "Apple M1", "ram_gb": 8, "storage_gb": 256, "os": "macOS" }
+  },
+  {
+    "brand": "Lenovo",
+    "model": "ThinkPad T14",
+    "type": "laptop",
+    "serial_no": "LAP-LEN-T14",
+    "owned_by": "Client",
+    "purchase_date": "2023-09-01T00:00:00Z",
+    "specs": { "processor": "AMD Ryzen 5 PRO", "ram_gb": 16, "storage_gb": 512, "os": "Windows 10 Pro" }
+  },
+  {
+    "brand": "HP",
+    "model": "EliteBook 840",
+    "type": "laptop",
+    "serial_no": "LAP-HP-ELITE840",
+    "owned_by": "RemoteState",
+    "specs": { "processor": "Intel Core i7", "ram_gb": 32, "storage_gb": 1000, "os": "Windows 11 Pro" }
+  },
+  {
+    "brand": "Logitech",
+    "model": "MX Anywhere 3",
+    "type": "mouse",
+    "serial_no": "MOU-LOG-ANY3",
+    "owned_by": "RemoteState",
+    "specs": { "connection_type": "wireless", "dpi": 4000, "number_of_buttons": 6 }
+  },
+  {
+    "brand": "Microsoft",
+    "model": "Surface Arc Mouse",
+    "type": "mouse",
+    "serial_no": "MOU-MS-ARC",
+    "owned_by": "Client",
+    "specs": { "connection_type": "wireless", "dpi": 1800, "number_of_buttons": 2 }
+  },
+  {
+    "brand": "Apple",
+    "model": "Magic Mouse",
+    "type": "mouse",
+    "serial_no": "MOU-APL-MAGIC",
+    "owned_by": "RemoteState",
+    "specs": { "connection_type": "wireless", "dpi": 1300, "number_of_buttons": 0 }
+  },
+  {
+    "brand": "Dell",
+    "model": "MS116",
+    "type": "mouse",
+    "serial_no": "MOU-DEL-MS116",
+    "owned_by": "Client",
+    "specs": { "connection_type": "wired", "dpi": 1000, "number_of_buttons": 3 }
+  },
+  {
+    "brand": "BenQ",
+    "model": "PD2700U",
+    "type": "monitor",
+    "serial_no": "MON-BENQ-PD2700U",
+    "owned_by": "RemoteState",
+    "specs": { "size_inch": 27, "resolution": "3840x2160", "refresh_rate_hz": 60, "panel_type": "IPS" }
+  },
+  {
+    "brand": "HP",
+    "model": "M24f",
+    "type": "monitor",
+    "serial_no": "MON-HP-M24F",
+    "owned_by": "Client",
+    "specs": { "size_inch": 24, "resolution": "1920x1080", "refresh_rate_hz": 75, "panel_type": "IPS" }
+  },
+  {
+    "brand": "Samsung",
+    "model": "Odyssey G7",
+    "type": "monitor",
+    "serial_no": "MON-SAM-G7",
+    "owned_by": "RemoteState",
+    "specs": { "size_inch": 32, "resolution": "2560x1440", "refresh_rate_hz": 240, "panel_type": "VA" }
+  },
+  {
+    "brand": "ViewSonic",
+    "model": "VA2261-2",
+    "type": "monitor",
+    "serial_no": "MON-VIEW-VA2261",
+    "owned_by": "Client",
+    "specs": { "size_inch": 22, "resolution": "1920x1080", "refresh_rate_hz": 60, "panel_type": "TN" }
+  },
+  {
+    "brand": "Crucial",
+    "model": "MX500",
+    "type": "hard-disk",
+    "serial_no": "HDD-CRU-MX500",
+    "owned_by": "RemoteState",
+    "specs": { "capacity_gb": 500, "type": "SSD", "interface": "SATA" }
+  },
+  {
+    "brand": "Western Digital",
+    "model": "WD Blue",
+    "type": "hard-disk",
+    "serial_no": "HDD-WD-BLUE",
+    "owned_by": "Client",
+    "specs": { "capacity_gb": 1000, "type": "HDD", "interface": "SATA" }
+  },
+  {
+    "brand": "Kingston",
+    "model": "NV2",
+    "type": "hard-disk",
+    "serial_no": "HDD-KIN-NV2",
+    "owned_by": "RemoteState",
+    "specs": { "capacity_gb": 2000, "type": "SSD", "interface": "NVMe" }
+  },
+  {
+    "brand": "Toshiba",
+    "model": "Canvio Basics",
+    "type": "hard-disk",
+    "serial_no": "HDD-TOSH-CANVIO",
+    "owned_by": "RemoteState",
+    "specs": { "capacity_gb": 2000, "type": "HDD", "interface": "USB 3.0" }
+  },
+  {
+    "brand": "HP",
+    "model": "v236w",
+    "type": "pen-drive",
+    "serial_no": "PEN-HP-V236W",
+    "owned_by": "Client",
+    "specs": { "capacity_gb": 64, "usb_type": "USB 2.0" }
+  },
+  {
+    "brand": "Samsung",
+    "model": "Bar Plus",
+    "type": "pen-drive",
+    "serial_no": "PEN-SAM-BAR",
+    "owned_by": "RemoteState",
+    "specs": { "capacity_gb": 128, "usb_type": "USB 3.1" }
+  },
+  {
+    "brand": "PNY",
+    "model": "Turbo Attache 3",
+    "type": "pen-drive",
+    "serial_no": "PEN-PNY-TURBO",
+    "owned_by": "RemoteState",
+    "specs": { "capacity_gb": 256, "usb_type": "USB 3.0" }
+  },
+  {
+    "brand": "Verbatim",
+    "model": "Store 'n' Go",
+    "type": "pen-drive",
+    "serial_no": "PEN-VER-STORE",
+    "owned_by": "Client",
+    "specs": { "capacity_gb": 32, "usb_type": "USB 2.0" }
+  },
+  {
+    "brand": "OnePlus",
+    "model": "11R",
+    "type": "mobile",
+    "serial_no": "MOB-ONE-11R",
+    "owned_by": "RemoteState",
+    "specs": { "imei": "865912012345678", "ram_gb": 16, "storage_gb": 256, "os": "Android" }
+  },
+  {
+    "brand": "Xiaomi",
+    "model": "Redmi Note 12",
+    "type": "mobile",
+    "serial_no": "MOB-XIA-NOTE12",
+    "owned_by": "Client",
+    "specs": { "imei": "861110018765432", "ram_gb": 6, "storage_gb": 128, "os": "Android" }
+  },
+  {
+    "brand": "Nothing",
+    "model": "Phone (2)",
+    "type": "mobile",
+    "serial_no": "MOB-NOT-P2",
+    "owned_by": "RemoteState",
+    "specs": { "imei": "354455018765432", "ram_gb": 12, "storage_gb": 256, "os": "Android" }
+  },
+  {
+    "brand": "iQOO",
+    "model": "Neo 7 Pro",
+    "type": "mobile",
+    "serial_no": "MOB-IQOO-NEO7",
+    "owned_by": "Client",
+    "specs": { "imei": "867788018765432", "ram_gb": 8, "storage_gb": 128, "os": "Android" }
+  },
+  {
+    "brand": "Vodafone Idea",
+    "model": "Prepaid 4G",
+    "type": "sim",
+    "serial_no": "SIM-VI-4GPRE",
+    "owned_by": "RemoteState",
+    "specs": { "phone_number": "+917000000001", "operator": "Vi", "sim_type": "physical", "plan_details": "299 Monthly" }
+  },
+  {
+    "brand": "BSNL",
+    "model": "Prepaid",
+    "type": "sim",
+    "serial_no": "SIM-BSNL-PRE",
+    "owned_by": "Client",
+    "specs": { "phone_number": "+917000000002", "operator": "BSNL", "sim_type": "physical", "plan_details": "153 Plan" }
+  },
+  {
+    "brand": "Jio",
+    "model": "eSIM Postpaid",
+    "type": "sim",
+    "serial_no": "SIM-JIO-ESIM",
+    "owned_by": "RemoteState",
+    "specs": { "phone_number": "+917000000003", "operator": "Jio", "sim_type": "eSIM", "plan_details": "399 Bill Plan" }
+  },
+  {
+    "brand": "Airtel",
+    "model": "Prepaid",
+    "type": "sim",
+    "serial_no": "SIM-AIR-PRE",
+    "owned_by": "Client",
+    "specs": { "phone_number": "+917000000004", "operator": "Airtel", "sim_type": "physical", "plan_details": "Truly Unlimited 666" }
+  },
+  {
+    "brand": "Portronics",
+    "model": "My Buddy K2",
+    "type": "accessories",
+    "serial_no": "ACC-PORT-K2",
+    "owned_by": "RemoteState",
+    "specs": { "name": "Laptop Stand", "description": "Foldable metal laptop stand", "compatibility": "Laptops up to 15 inch" }
+  },
+  {
+    "brand": "JBL",
+    "model": "Go 3",
+    "type": "accessories",
+    "serial_no": "ACC-JBL-GO3",
+    "owned_by": "Client",
+    "specs": { "name": "Bluetooth Speaker", "description": "Portable waterproof speaker", "compatibility": "Bluetooth" }
+  },
+  {
+    "brand": "Stuffcool",
+    "model": "Earl",
+    "type": "accessories",
+    "serial_no": "ACC-STUFF-EARL",
+    "owned_by": "RemoteState",
+    "specs": { "name": "USB-C to C Cable", "description": "4-in-1 Type C cable", "compatibility": "All Type C devices" }
+  },
+  {
+    "brand": "Generic",
+    "model": "Ethernet Adapter",
+    "type": "accessories",
+    "serial_no": "ACC-GEN-ETH",
+    "owned_by": "Client",
+    "specs": { "name": "USB to Ethernet Adapter", "description": "RJ45 LAN adapter", "compatibility": "USB-A" }
+  }
+]
